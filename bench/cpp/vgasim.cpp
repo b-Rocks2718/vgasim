@@ -68,16 +68,20 @@ void	VGASIM::on_realize() {
 };
 
 void	VGASIM::get_preferred_width_vfunc(int &min, int &nw) const {
-	min = m_mode.width(); nw = m_mode.width();
+	const int display_w = m_mode.width() * m_display_scale;
+	min = display_w; nw = display_w;
 } void	VGASIM::get_preferred_width_for_height_vfunc(int h, int &min, int &nw) const {
-	min = m_mode.width(); nw = m_mode.width();
+	const int display_w = m_mode.width() * m_display_scale;
+	min = display_w; nw = display_w;
 }
 
 void	VGASIM::get_preferred_height_vfunc(int &min, int &nw) const {
-	min = m_mode.height(); nw = m_mode.height();
+	const int display_h = m_mode.height() * m_display_scale;
+	min = display_h; nw = display_h;
 }
 void	VGASIM::get_preferred_height_for_width_vfunc(int w, int &min, int &nw) const {
-	min = m_mode.height(); nw = m_mode.height();
+	const int display_h = m_mode.height() * m_display_scale;
+	min = display_h; nw = display_h;
 }
 
 void	VGASIM::operator()(const int vsync, const int hsync, const int r, const int g, const int b) {
@@ -231,7 +235,8 @@ void	VGASIM::operator()(const int vsync, const int hsync, const int r, const int
 				m_gc->rectangle(xv, yv, 1, 1);
 				m_gc->fill();
 				
-				queue_draw_area(xv, yv, 1, 1);
+					queue_draw_area(xv * m_display_scale, yv * m_display_scale,
+							m_display_scale, m_display_scale);
 				// m_window->invalidate_rect(Gdk::Rectangle(
 				// 	xv, yv, 1, 1), true);
 			}
@@ -249,9 +254,10 @@ void	VGASIM::operator()(const int vsync, const int hsync, const int r, const int
 bool	VGASIM::on_draw(CONTEXT &gc) {
 	// printf("ON-DRAW\n");
 	gc->save();
-	// gc->rectangle(0,0,VGA_WIDTH, VGA_HEIGHT);
-	// gc->clip();
-	gc->set_source(m_pix, 0, 0);
+	gc->scale(m_display_scale, m_display_scale);
+	Cairo::RefPtr<Cairo::SurfacePattern> pattern = Cairo::SurfacePattern::create(m_pix);
+	pattern->set_filter(Cairo::FILTER_NEAREST);
+	gc->set_source(pattern);
 	gc->paint();
 	gc->restore();
 
@@ -260,7 +266,7 @@ bool	VGASIM::on_draw(CONTEXT &gc) {
 
 void	VGAWIN::init(void) {
 
-	m_vgasim->set_size_request(m_vgasim->width(),m_vgasim->height());
+	m_vgasim->set_size_request(m_vgasim->display_width(),m_vgasim->display_height());
 	set_border_width(0);
 	add(*m_vgasim);
 	show_all();
@@ -272,13 +278,12 @@ VGAWIN::VGAWIN(void) : SIMWIN(640,480) {
 	init();
 }
 
-VGAWIN::VGAWIN(const int w, const int h) : SIMWIN(w, h) {
-	m_vgasim = new VGASIM(w, h);
+VGAWIN::VGAWIN(const int w, const int h, const int display_scale) : SIMWIN(w, h) {
+	m_vgasim = new VGASIM(w, h, display_scale);
 	init();
 }
 
-VGAWIN::VGAWIN(const char *h, const char *v) : SIMWIN(h, v) {
-	m_vgasim = new VGASIM(h, v);
+VGAWIN::VGAWIN(const char *h, const char *v, const int display_scale) : SIMWIN(h, v) {
+	m_vgasim = new VGASIM(h, v, display_scale);
 	init();
 }
-
