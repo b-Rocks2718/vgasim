@@ -57,6 +57,7 @@ public:
 	CAIROGC			m_gc;
 	IMAGE<unsigned>		*m_data;
 	VIDEOMODE		m_mode;
+	int			m_display_scale;
 	int	m_vsync_count, m_hsync_count;
 	bool	m_out_of_sync;
 
@@ -76,22 +77,26 @@ public:
 
 		set_has_window(true);
 		Widget::set_can_focus(false);
-		set_size_request(m_mode.width(), m_mode.height());
+		const int display_w = m_mode.width() * m_display_scale;
+		const int display_h = m_mode.height() * m_display_scale;
+		set_size_request(display_w, display_h);
 	}
 
 public:
 	static	const	int	CLOCKS_PER_PIXEL,
 				BITS_PER_COLOR;
 
-	VGASIM(void) : Gtk::DrawingArea(), m_mode(640,480) {
+	VGASIM(void) : Gtk::DrawingArea(), m_mode(640,480), m_display_scale(1) {
 		initialize();
 	}
 
-	VGASIM(const int w, const int h) : Gtk::DrawingArea(), m_mode(w, h) {
+	VGASIM(const int w, const int h, const int display_scale = 1)
+		: Gtk::DrawingArea(), m_mode(w, h), m_display_scale((display_scale > 0) ? display_scale : 1) {
 		initialize();
 	}
 
-	VGASIM(const char *h, const char *v) : Gtk::DrawingArea(), m_mode(h,v) {
+	VGASIM(const char *h, const char *v, const int display_scale = 1)
+		: Gtk::DrawingArea(), m_mode(h,v), m_display_scale((display_scale > 0) ? display_scale : 1) {
 		initialize();
 	}
 
@@ -153,6 +158,14 @@ public:
 		return m_mode.height();
 	}
 
+	int	display_width(void) {
+		return m_mode.width() * m_display_scale;
+	}
+
+	int	display_height(void) {
+		return m_mode.height() * m_display_scale;
+	}
+
 	int	raw_width(void) {
 		return m_mode.raw_width();
 	}
@@ -189,8 +202,8 @@ private:
 	void	init(void);
 public:
 	VGAWIN(void);
-	VGAWIN(const int w, const int h);
-	VGAWIN(const char *h, const char *v);
+	VGAWIN(const int w, const int h, const int display_scale = 1);
+	VGAWIN(const char *h, const char *v, const int display_scale = 1);
 	~VGAWIN(void) { delete m_vgasim; }
 	void	operator()(const int vsync, const int hsync, const int r, const int g, const int b) {
 		(*m_vgasim)(vsync, hsync, r, g, b);
@@ -232,4 +245,3 @@ public:
 };
 
 #endif
-
